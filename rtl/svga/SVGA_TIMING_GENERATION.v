@@ -12,52 +12,29 @@
 
 module SVGA_TIMING_GENERATION
 (
-	pixel_clock,
-	reset,
-	h_synch,
-	v_synch,
-	blank,
-	pixel_count,
-	line_count,
+input 						pixel_clock,		  // pixel clock                         
+input 						reset,				  // reset                               
+(*keep*)output	reg			h_synch,			  // horizontal synch for VGA connector  
+(*keep*)output	reg			v_synch,			  // vertical synch for VGA connector    
+output	reg					blank,				  // composite blanking                  
+output	reg	[10:0]			pixel_count,		  // counts the pixels in a line         
+output	reg	[9:0]			line_count,			  // counts the display lines            
 
-	show_border,
+(*keep*)output	reg			show_border,
 
 	// text
-	subchar_pixel,
-	subchar_line,
-	char_column,
-	char_line,
+(*keep*)output	reg	[3:0]	subchar_pixel,		  // pixel position within the character                   
+(*keep*)output	reg	[4:0]	subchar_line,		  // identifies the line number within a character block   
+(*keep*)output	reg	[6:0]	char_column,		  // character number on the current line                  
+(*keep*)output	reg	[6:0]	char_line,			  // line number on the screen                             
 
 	// graph
-	graph_pixel,
-	graph_line_2x,
-	graph_line_3x
+(*keep*)output	reg	[8:0]	graph_pixel,
+(*keep*)output	reg	[9:0]	graph_line_2x,
+(*keep*)output	reg	[9:0]	graph_line_3x
 );
 
-input 				pixel_clock;		// pixel clock
-input 				reset;				// reset
-(*keep*)output	reg			h_synch;			// horizontal synch for VGA connector
-(*keep*)output	reg			v_synch;			// vertical synch for VGA connector
-output	reg			blank;				// composite blanking
-output	reg	[10:0]	pixel_count;		// counts the pixels in a line
-output	reg	[9:0]	line_count;			// counts the display lines
-
-(*keep*)output	reg			show_border;
-
-// 字符控制
-(*keep*)output	reg	[3:0]	subchar_pixel;		// pixel position within the character
-(*keep*)output	reg	[4:0]	subchar_line;		// identifies the line number within a character block
-(*keep*)output	reg	[6:0]	char_column;		// character number on the current line
-(*keep*)output	reg	[6:0]	char_line;			// line number on the screen
-
-// 图形控制 128*64
-(*keep*)output	reg		[8:0]	graph_pixel;
-(*keep*)output	reg		[9:0]	graph_line_3x;
-
-// 图形控制 256*192
-(*keep*)output	reg		[9:0]	graph_line_2x;
-
-(*keep*)reg			h_blank;
+(*keep*)reg	h_blank;
 reg			v_blank;
 
 reg			show_pixel;

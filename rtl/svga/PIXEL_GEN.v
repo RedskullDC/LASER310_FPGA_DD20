@@ -1,30 +1,17 @@
 module PIXEL_GEN(
 	// control
-	reset,
-
-	pixel_code,
-	graph_pixel,
-
-	pixel_clock,
-
-	pixel_8p_2bit,	//	64x64x4
-	pixel_4p_2bit,	//	128x64x4 128x96x4 128x192x4
-	pixel_4p_1bit,	//	128x64x2 128x96x2 128x192x2
-	pixel_2p_1bit	//	256x192x2
+	input					reset,
+	                    
+	input	[7:0]			pixel_code,
+	input	[8:0]			graph_pixel,	// pixel number on the current line
+	                    
+	input					pixel_clock,
+	                    
+	output	reg	[1:0]		pixel_8p_2bit,	//	64x64x4
+	output	reg	[1:0]		pixel_4p_2bit,	//	128x64x4 128x96x4 128x192x4
+	output	reg				pixel_4p_1bit,	//	128x64x2 128x96x2 128x192x2
+	output	reg				pixel_2p_1bit	//	256x192x2
 );
-
-
-input				reset;
-
-input	[7:0]		pixel_code;
-input	[8:0]		graph_pixel;		// pixel number on the current line
-
-input				pixel_clock;
-
-output	reg	[1:0]	pixel_8p_2bit;
-output	reg	[1:0]	pixel_4p_2bit;
-output	reg			pixel_4p_1bit;
-output	reg			pixel_2p_1bit;
 
 reg		[7:0]		latched_8p_2bit_data;
 reg		[7:0]		latched_4p_2bit_data;

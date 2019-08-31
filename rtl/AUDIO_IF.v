@@ -1,19 +1,19 @@
 module AUDIO_IF (
 	//	Audio Side
-	oAUD_BCLK,
-	oAUD_DACLRCK,
-	oAUD_DACDAT,
-	oAUD_ADCLRCK,
-	iAUD_ADCDAT,
+	(*keep*)output		oAUD_BCLK,
+	output				oAUD_DACLRCK,
+	output				oAUD_DACDAT,
+	output				oAUD_ADCLRCK,
+	input				iAUD_ADCDAT,
 	//	Control Signals
-	iSPK_A,
-	iSPK_B,
-	iCASS_OUT,
-	oCASS_IN_L,
-	oCASS_IN_R,
+	input				iSPK_A,
+	input				iSPK_B,
+	input		[1:0]	iCASS_OUT,
+	output				oCASS_IN_L,
+	output				oCASS_IN_R,
 	// System
-	iCLK_18_4,
-	iRST_N
+	input				iCLK_18_4,
+	input				iRST_N
 );
 
 //parameter	REF_CLK			=	18432000;	//	18.432	MHz
@@ -25,22 +25,6 @@ parameter	SND_SAMPLE_DATA	=	48;
 
 
 // REF_CLK/(SAMPLE_RATE*DATA_WIDTH*CHANNEL_NUM*2)-1)
-
-//	Audio Side
-(*keep*)output			oAUD_BCLK;
-output				oAUD_DACDAT;
-output				oAUD_DACLRCK;
-output				oAUD_ADCLRCK;
-input				iAUD_ADCDAT;
-//	Control Signals
-input				iSPK_A;
-input				iSPK_B;
-input		[1:0]	iCASS_OUT;
-output				oCASS_IN_L;
-output				oCASS_IN_R;
-// System
-input				iCLK_18_4;
-input				iRST_N;
 
 //input [9:0] iRight;
 //input [9:0] iLeft;

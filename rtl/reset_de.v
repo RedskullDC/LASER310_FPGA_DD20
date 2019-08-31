@@ -8,21 +8,11 @@ RESET_AHEAD_N	下拉时间提前恢复时间 0.0209s
 */
 
 module RESET_DE(
-	CLK,			// 50MHz
-	SYS_RESET_N,
-	RESET_N,		// 50MHz/32/65536
-	RESET_AHEAD_N	// 提前恢复，可以接 FLASH_RESET_N
+	input		CLK,			// 50MHz
+	input		SYS_RESET_N,
+	output		RESET_N,		// 50MHz/32/65536
+	output		RESET_AHEAD_N	// 提前恢复，可以接 FLASH_RESET_N
 );
-
-
-input				CLK;
-input				SYS_RESET_N;
-output				RESET_N;
-output				RESET_AHEAD_N;
-
-
-wire	RESET_N;
-wire	RESET_AHEAD_N;
 
 reg		[5:0]		CLK_CNT;
 reg		[16:0]		RESET_COUNT;

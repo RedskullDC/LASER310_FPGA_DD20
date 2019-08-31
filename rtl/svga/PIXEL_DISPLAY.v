@@ -1,65 +1,34 @@
 module PIXEL_DISPLAY (
-	pixel_clock,
-	reset,
-
-	show_border,
-
+	input					pixel_clock,
+	input					reset,
+	                    
+	input					show_border,
 	// mode
-	ag,
-	gm,
-	css,
+	input					ag,
+	input		[2:0]		gm,
+	input					css,
 
 	// text
-	char_column,
-	char_line,
-	subchar_line,
-	subchar_pixel,
+	input		[6:0]		char_column,				 // character number on the current line           
+	input		[6:0]		char_line,					 // line number on the screen                      
+	input		[4:0]		subchar_line,				 // the line number within a character block 0-8   
+	input		[3:0]		subchar_pixel,				 // the pixel number within a character block 0-8  
 
 	// graph
-	graph_pixel,
-	graph_line_2x,
-	graph_line_3x,
+	input		[8:0]		graph_pixel,				 // pixel number on the current line    
+	input		[9:0]		graph_line_2x,				 // line number on the screen           
+	input		[9:0]		graph_line_3x,				 // line number on the screen           
 
 	// vram
-	vram_rd_enable,
-	vram_addr,
-	vram_data,
+	output					vram_rd_enable,
+	output	reg	[12:0]		vram_addr,
+	input		[7:0] 		vram_data,
 
 	// vga
-	vga_red,
-	vga_green,
-	vga_blue
+	output		[7:0]		vga_red,
+	output		[7:0]		vga_green,
+	output		[7:0]		vga_blue
 );
-
-input					pixel_clock;
-input					reset;
-
-input					show_border;
-
-// mode
-input					ag;
-input			[2:0]	gm;
-input					css;
-
-// text
-input			[6:0]	char_column;		// character number on the current line
-input			[6:0]	char_line;			// line number on the screen
-input			[4:0]	subchar_line;		// the line number within a character block 0-8
-input			[3:0]	subchar_pixel;		// the pixel number within a character block 0-8
-
-// graph
-input			[8:0]	graph_pixel;		// pixel number on the current line
-input			[9:0]	graph_line_2x;		// line number on the screen
-input			[9:0]	graph_line_3x;		// line number on the screen
-
-output					vram_rd_enable;
-output	reg		[12:0]	vram_addr;
-input			[7:0] 	vram_data;
-
-output			[7:0]	vga_red;
-output			[7:0]	vga_green;
-output			[7:0]	vga_blue;
-
 
 //// Label Definitions ////
 
@@ -272,7 +241,7 @@ CHAR_GEN CHAR_GEN
 
 	.char_code(latched_vram_data),
 	.subchar_line(subchar_line),	// current line of pixels within current character
-	.subchar_pixel(subchar_pixel),	// current column of pixels withing current character
+	.subchar_pixel(subchar_pixel),	// current column of pixels within current character
 
 	.pixel_clock(pixel_clock),		// read clock
 	.pixel_on(pixel_on)				// read data
@@ -283,7 +252,7 @@ PIXEL_GEN PIXEL_GEN
 	.reset(reset),					// reset signal
 
 	.pixel_code(latched_vram_data),
-	.graph_pixel(graph_pixel),		// current column of pixels withing current character
+	.graph_pixel(graph_pixel),		// current column of pixels within current character
 
 	.pixel_clock(pixel_clock),		// read clock
 

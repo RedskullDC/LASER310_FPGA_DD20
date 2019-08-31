@@ -2,47 +2,27 @@
 // mc6847
 
 module MC6847_VGA(
-PIX_CLK,
-RESET_N,
+	input					PIX_CLK,
+	input					RESET_N,
+							
+	output	wire			RD,
+	input			[7:0]	DD,
+	output	wire	[12:0]	DA,				// 8KB
+							
+	input					AG,
+	input					AS,
+	input					EXT,
+	input					INV,
+	input			[2:0]	GM,
+	input					CSS,
 
-RD,
-DD,
-DA,
-
-AG,
-AS,
-EXT,
-INV,
-GM,
-CSS,
-
-// vga
-VGA_OUT_HSYNC,
-VGA_OUT_VSYNC,
-VGA_OUT_RED,
-VGA_OUT_GREEN,
-VGA_OUT_BLUE
+	// vga
+	output	wire			VGA_OUT_HSYNC,
+	output	wire			VGA_OUT_VSYNC,
+	output	wire	[7:0]	VGA_OUT_RED,
+	output	wire	[7:0]	VGA_OUT_GREEN,
+	output	wire	[7:0]	VGA_OUT_BLUE
 );
-
-input			PIX_CLK;
-input			RESET_N;
-
-output	wire			RD;
-output	wire	[12:0]	DA;		// 8KB
-input			[7:0]	DD;
-input					AG;
-input					AS;
-input					EXT;
-input					INV;
-input					CSS;
-input			[2:0]	GM;
-
-output	wire			VGA_OUT_HSYNC;
-output	wire			VGA_OUT_VSYNC;
-output	wire	[7:0]	VGA_OUT_RED;
-output	wire	[7:0]	VGA_OUT_GREEN;
-output	wire	[7:0]	VGA_OUT_BLUE;
-
 
 reg				LATCHED_AG;
 reg				LATCHED_AS;
@@ -154,45 +134,45 @@ PIXEL_DISPLAY PIXEL_DISPLAY(
 // instantiate the video timing generator
 SVGA_TIMING_GENERATION SVGA_TIMING_GENERATION
 (
-	pixel_clock,
-	reset,
-	h_synch,
-	v_synch,
-	blank,
-	pixel_count,
-	line_count,
+	.pixel_clock(pixel_clock),
+	.reset(reset),
+	.h_synch(h_synch),
+	.v_synch(v_synch),
+	.blank(blank),
+	.pixel_count(pixel_count),
+	.line_count(line_count),
 
-	show_border,
+	.show_border(show_border),
 
 	// text
-	subchar_pixel,
-	subchar_line,
-	char_column,
-	char_line,
+	.subchar_pixel(subchar_pixel),
+	.subchar_line(subchar_line),
+	.char_column(char_column),
+	.char_line(char_line),
 
 	// graph
-	graph_pixel,
-	graph_line_2x,
-	graph_line_3x
+	.graph_pixel(graph_pixel),
+	.graph_line_2x(graph_line_2x),
+	.graph_line_3x(graph_line_3x)
 );
 
 // instantiate the video output mux
 VIDEO_OUT VIDEO_OUT
 (
-	pixel_clock,
-	reset,
-	vga_red,
-	vga_green,
-	vga_blue,
-	h_synch,
-	v_synch,
-	blank,
+	.pixel_clock(pixel_clock),
+	.reset(reset),
+	.vga_red_data(vga_red),
+	.vga_green_data(vga_green),
+	.vga_blue_data(vga_blue),
+	.h_synch(h_synch),
+	.v_synch(v_synch),
+	.blank(blank),
 
-	VGA_OUT_HSYNC,
-	VGA_OUT_VSYNC,
-	VGA_OUT_RED,
-	VGA_OUT_GREEN,
-	VGA_OUT_BLUE
+	.VGA_OUT_HSYNC(VGA_OUT_HSYNC),
+	.VGA_OUT_VSYNC(VGA_OUT_VSYNC),
+	.VGA_OUT_RED(VGA_OUT_RED),
+	.VGA_OUT_GREEN(VGA_OUT_GREEN),
+	.VGA_OUT_BLUE(VGA_OUT_BLUE)
 );
 
 endmodule

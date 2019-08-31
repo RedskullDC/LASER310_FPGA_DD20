@@ -68,52 +68,30 @@
 
 
 module UART_IF(
-	//
-	MEM_A,
-	MEM_WR,
-	MEM_DAT,
-	MEM_Q,
-	MEM_RDY,
-	MEM_WAIT,
-	MEM_CS,
-	//
-	MEM_RD,
+
+	output	reg		[23:0]		MEM_A,
+	output	reg					MEM_WR,
+	output	reg		[7:0]		MEM_DAT,
+	input			[7:0]		MEM_Q,
+		
+	input						MEM_RDY,		// 收到读取信号的下个周期必须完成读取操作 
+												// The next cycle of receiving the read signal must complete the read operation
+	output	reg					MEM_WAIT,
+	output	reg					MEM_CS,
+
+	output	reg					MEM_RD,
 
 	//	Control Signals
+	// UART: 115200 bps, 8N1
+	input	wire			    UART_RXD,
+	output	wire			    UART_TXD,
 
-    /*
-     * UART: 115200 bps, 8N1
-     */
-    UART_RXD,
-    UART_TXD,
-
-	DBG,
+	output	reg					DBG,
 
 	// Clock: 10MHz 50MHz
-	CLK,
-	RST_N
+	input		CLK,
+	input		RST_N
 );
-
-//
-output	reg		[23:0]	MEM_A;
-output	reg				MEM_WR;
-output	reg		[7:0]	MEM_DAT;
-input			[7:0]	MEM_Q;
-
-input					MEM_RDY;		// 收到读取信号的下个周期必须完成读取操作
-output	reg				MEM_WAIT;
-output	reg				MEM_CS;
-
-output	reg				MEM_RD;
-
-input	wire			UART_RXD;
-output	wire			UART_TXD;
-
-output	reg				DBG;
-
-input	CLK;
-input	RST_N;
-
 
 reg		[5:0]	ST;
 reg		[5:0]	RET_ST;
@@ -191,11 +169,8 @@ always @*
             `ST_UART_DECODE:			statename = "UART_DECODE";
             `ST_UART_RX:				statename = "UART_RX";
             `ST_UART_TX:				statename = "UART_TX";
-
             `ST_BUF_WR:					statename = "BUF_WR";
-
             `ST_BUF_RD:					statename = "BUF_RD";
-
 			default:					statename = "UNKNOWN";
     endcase
 

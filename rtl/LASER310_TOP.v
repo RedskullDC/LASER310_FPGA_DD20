@@ -1,13 +1,21 @@
 `timescale 1 ns / 1 ns
 
 // 为降低开发难度，暂时选用 DE2 DE1 作为开发平台。
+// In order to reduce the development difficulty, DE2 DE1 is temporarily selected as the development platform.
+
 //  ROM 放在 FLASH 上，取消磁带输入模拟。内存放在 SRAM 上，使用 64K 空间，无IO和扩展空间。
+// Place the ROM on the FLASH and cancel the tape input simulation. The memory is placed on the SRAM, using 64K space, no IO and expansion space.
 
 
 // 使用FPGA外部 SRAM 芯片，数据口同时完成输入输出。一定要仔细调整时序，防止两个输出撞车。
+// Using the FPGA's external SRAM chip, the data port completes both input and output. 
+// Be sure to carefully adjust the timing to prevent the two outputs from crashing.
 
 // 设计中，sys_rom 和 2K RAM 作为基础系统，保证系统最低需求。
 // 即使 flash 不能成功写入，也不影响系统运行。
+// In the design, sys_rom and 2K RAM are used as the base system to ensure the minimum system requirements. 
+// Even if the flash cannot be successfully written, it does not affect the system operation.
+
 // sys_rom_altera sys_rom(); ram_2k_altera sys_ram_2k();
 
 
@@ -20,6 +28,7 @@
 // DE0 DE2-70 DE2-115 FLASH 8M
 
 // 选择开发板
+// Select development board (set in individual top modules now)
 //`define	DE1
 //`define	DE2
 
@@ -27,10 +36,15 @@
 `define	TV80
 
 // 扩展绘图模式支持
+// Extended drawing mode support
 `define SHRG
 
 
 // 内存有三种配置方案：1、通过 FPGA 片上内存支持 16K  2、通过 FPGA 片上内存支持 16K 和 16K 扩展内存  3、通过 SRAM 或 SSRAM 支持 256K 扩展内存
+// There are three configuration schemes for memory: 
+// 1. Support 16K through on-chip memory of FPGA
+// 2. Support 16K and 16K extended memory through FPGA on-chip memory 
+// 3. Support 256K extended memory through SRAM or SSRAM
 
 `ifdef DE1
 
@@ -69,25 +83,27 @@
 `define SRAM_CHIP_256x16
 `define VRAM_8K
 
-
 `endif
 
 module LASER310_TOP(
-	CLK50MHZ,
+	input	CLK50MHZ,
 
 `ifdef CLOCK_27MHZ
-	CLK27MHZ,
+	input	CLK27MHZ,
 `endif
 
 `ifdef RAM_ON_SRAM_CHIP
+`ifdef SRAM_CHIP_256x16
 	// Altera DE1 512K SRAM
-	RAM_DATA,			// 16 bit data bus to RAM
-	RAM_ADDRESS,		// Common address
-	RAM_WE_N,			// Common RW
-	RAM_OE_N,
-	RAM_CS_N,			// Chip Select for RAM
-	RAM_BE0_N,			// Byte Enable for RAM
-	RAM_BE1_N,			// Byte Enable for RAM
+	// Altera DE2 512K SRAM
+inout	wire	[15:0]	RAM_DATA,			// 16 bit data bus to RAM
+output	wire	[17:0]	RAM_ADDRESS,		// Common address
+output	reg				RAM_WE_N,			// Common RW
+output	reg				RAM_OE_N,
+output	reg				RAM_CS_N,			// Chip Select for RAM
+output	reg				RAM_BE0_N,			// Byte Enable for RAM
+output	reg				RAM_BE1_N,			// Byte Enable for RAM
+`endif
 `endif
 
 
@@ -97,74 +113,98 @@ module LASER310_TOP(
 	// Altera DE0 8MB FLASH
 	// Altera DE2-70 8MB FLASH
 	// Altera DE2-115 8MB FLASH
+
 `ifdef FLASH_CHIP
-	FL_ADDRESS,
-	FL_DATA,
-	FL_CE_N,
-	FL_OE_N,
-	FL_WE_N,
-	FL_RESET_N,
+
+// Altera DE1 4MB FLASH
+`ifdef FLASH_CHIP_4M
+output	[21:0]	FL_ADDRESS,
+`endif
+
+// Altera DE2-70 8MB FLASH
+`ifdef FLASH_CHIP_8M
+output	[22:0]	FL_ADDRESS,
+`endif
+
+//input	[15:0]	FL_DATA,
+input	[7:0]	FL_DATA,
+output	FL_CE_N,
+output	FL_OE_N,
+output	FL_WE_N,
+output	FL_RESET_N,
 
 `ifdef	DE0
-	FL_BYTE_N,
-	FL_RY,
-	FL_WP_N,
-	//FL_DQ15,
+output		FL_BYTE_N,
+input		FL_RY,
+output		FL_WP_N,
+//output	FL_DQ15,
 `endif
 
 `ifdef	DE1
-	//FL_BYTE_N,
-	//FL_RY,
-	//FL_WP_N,
-	//FL_DQ15,
+//output	FL_BYTE_N,
+//input		FL_RY,
+//output	FL_WP_N,
+//output	FL_DQ15,
 `endif
 
 `ifdef	DE2
-	//FL_BYTE_N,
-	//FL_RY,
-	//FL_WP_N,
-	//FL_DQ15,
+//output	FL_BYTE_N,
+//input		FL_RY,
+//output	FL_WP_N,
+//output	FL_DQ15,
 `endif
 
 `ifdef	DE2_70
-	FL_BYTE_N,
-	FL_RY,
-	FL_WP_N,
-	//FL_DQ15,
+output			FL_BYTE_N,
+input			FL_RY,
+output			FL_WP_N,
+//output		FL_DQ15,
 `endif
 
 `ifdef	DE2_115
-	//FL_BYTE_N,
-	FL_RY,
-	FL_WP_N,
-	//FL_DQ15,
+//output		FL_BYTE_N,
+input			FL_RY,
+output			FL_WP_N,
+//output		FL_DQ15,
 `endif
 
-`endif
+`endif	// FLASH_CHIP
 
-	// VGA
+// VGA
 `ifdef VGA_RESISTOR
-	VGA_RED,
-	VGA_GREEN,
-	VGA_BLUE,
-	VGA_HS,
-	VGA_VS,
+// de0 de1
+`ifdef VGA_BIT12
+output	[3:0]	VGA_RED,
+output	[3:0]	VGA_GREEN,
+output	[3:0]	VGA_BLUE,
+`endif
+output			VGA_HS,
+output			VGA_VS,
 `endif
 
 `ifdef VGA_ADV7123
-	VGA_DAC_RED,
-	VGA_DAC_GREEN,
-	VGA_DAC_BLUE,
-	VGA_HS,
-	VGA_VS,
-	VGA_DAC_BLANK_N,
-	VGA_DAC_SYNC_N,
-	VGA_DAC_CLOCK,
+// de2
+`ifdef VGA_BIT30
+output	wire	[9:0]	VGA_DAC_RED,
+output	wire	[9:0]	VGA_DAC_GREEN,
+output	wire	[9:0]	VGA_DAC_BLUE,
+`endif
+`ifdef VGA_BIT24
+output	wire	[7:0]	VGA_DAC_RED,
+output	wire	[7:0]	VGA_DAC_GREEN,
+output	wire	[7:0]	VGA_DAC_BLUE,
+`endif
+
+output	reg				VGA_HS,
+output	reg				VGA_VS,
+output	wire			VGA_DAC_BLANK_N,
+output	wire			VGA_DAC_SYNC_N,
+output	wire			VGA_DAC_CLOCK,
 `endif
 
 	// PS/2
-	PS2_KBCLK,
-	PS2_KBDAT,
+input 				PS2_KBCLK,
+input				PS2_KBDAT,
 	//Serial Ports
 	//TXD1,
 	//RXD1,
@@ -172,289 +212,83 @@ module LASER310_TOP(
 	//DIGIT_N,
 	//SEGMENT_N,
 	// LEDs
-	LED,
+output	wire	[9:0]	LED,
 `ifdef GPIO_PIN
-	LEDG,
+output	wire	[7:0]	LEDG,
 `endif
+
 	// Apple Perpherial
 	//SPEAKER,
 	//PADDLE,
 	//P_SWITCH,
 	//DTOA_CODE,
 	// Extra Buttons and Switches
-	SWITCH,
+input	[9:0]		SWITCH,
 
 `ifdef AUDIO_WM8731
 	////////////////	Audio CODEC		////////////////////////
-	AUD_ADCLRCK,					//	Audio CODEC ADC LR Clock
-	AUD_ADCDAT,						//	Audio CODEC ADC Data
-	AUD_DACLRCK,					//	Audio CODEC DAC LR Clock
-	AUD_DACDAT,						//	Audio CODEC DAC Data
-	AUD_BCLK,						//	Audio CODEC Bit-Stream Clock
-	AUD_XCK,						//	Audio CODEC Chip Clock
+inout				AUD_ADCLRCK,					//	Audio CODEC ADC LR Clock
+input				AUD_ADCDAT,						//	Audio CODEC ADC Data
+                	
+inout				AUD_DACLRCK,					//	Audio CODEC DAC LR Clock
+output	wire		AUD_DACDAT,						//	Audio CODEC DAC Data
+                	
+inout				AUD_BCLK,						//	Audio CODEC Bit-Stream Clock
+output	wire		AUD_XCK,						//	Audio CODEC Chip Clock
 
 	////////////////////	I2C		////////////////////////////
-	I2C_SDAT,						//	I2C Data
-	I2C_SCLK,						//	I2C Clock
+inout				I2C_SDAT,						//	I2C Data
+output				I2C_SCLK,						//	I2C Clock
 
 `endif
 
 `ifdef GPIO_PIN
-	////////////////////	GPIO	////////////////////////////
-	//GPIO_0,							//	GPIO Connection 0
-	//GPIO_1,							//	GPIO Connection 1
+////////////////////	GPIO	////////////////////////////
+//output	[35:0]	GPIO_0;		//	GPIO Connection 0
+//output	[35:0]	GPIO_1;		//	GPIO Connection 1
 `endif
 
 `ifdef UART_CHIP_EXT
-	UART_RTS,
-	UART_CTS,
+input		UART_RTS,
+output		UART_CTS = 1'bz,
 `endif
 
 `ifdef UART_CHIP
-	UART_RXD,
-	UART_TXD,
+input			UART_RXD,
+output			UART_TXD,
 `endif
 
 `ifdef	DE1
-	////////////////////	7-SEG Dispaly	////////////////////
-	HEX0_D,							//	Seven Segment Digit 0
-	HEX1_D,							//	Seven Segment Digit 1
-	HEX2_D,							//	Seven Segment Digit 2
-	HEX3_D,							//	Seven Segment Digit 3
+	////////////////////	7-SEG Display	////////////////////
+output	[6:0]	HEX0_D,							//	Seven Segment Digit 0
+output	[6:0]	HEX1_D,							//	Seven Segment Digit 1
+output	[6:0]	HEX2_D,							//	Seven Segment Digit 2
+output	[6:0]	HEX3_D,							//	Seven Segment Digit 3
 `endif
 
 `ifdef	DE2
-	////////////////////	7-SEG Dispaly	////////////////////
-	HEX0_D,							//	Seven Segment Digit 0
-	HEX1_D,							//	Seven Segment Digit 1
-	HEX2_D,							//	Seven Segment Digit 2
-	HEX3_D,							//	Seven Segment Digit 3
-	HEX4_D,							//	Seven Segment Digit 4
-	HEX5_D,							//	Seven Segment Digit 5
-	HEX6_D,							//	Seven Segment Digit 6
-	HEX7_D,							//	Seven Segment Digit 7
+	////////////////////	7-SEG Display	////////////////////
+output	[6:0]	HEX0_D,							//	Seven Segment Digit 0
+output	[6:0]	HEX1_D,							//	Seven Segment Digit 1
+output	[6:0]	HEX2_D,							//	Seven Segment Digit 2
+output	[6:0]	HEX3_D,							//	Seven Segment Digit 3
+output	[6:0]	HEX4_D,							//	Seven Segment Digit 4
+output	[6:0]	HEX5_D,							//	Seven Segment Digit 5
+output	[6:0]	HEX6_D,							//	Seven Segment Digit 6
+output	[6:0]	HEX7_D,							//	Seven Segment Digit 7
 `endif
 
 	// de0
 	// de1
-	BUTTON_N
+input	[3:0]	BUTTON_N
 );
 
-
-input				CLK50MHZ;
-
-`ifdef CLOCK_27MHZ
-input				CLK27MHZ;
-`endif
-
-
-`ifdef	RAM_ON_SRAM_CHIP
-
+`ifdef RAM_ON_SRAM_CHIP
 `ifdef SRAM_CHIP_256x16
-
-// Altera DE1 512K SRAM
-// Altera DE2 512K SRAM
-inout	wire	[15:0]	RAM_DATA;			// 16 bit data bus to RAM
-output	wire	[17:0]	RAM_ADDRESS;		// Common address
-output	reg				RAM_WE_N;			// Common RW
-output	reg				RAM_OE_N;
-
-output	reg				RAM_CS_N;			// Chip Select for RAM
-output	reg				RAM_BE0_N;			// Byte Enable for RAM
-output	reg				RAM_BE1_N;			// Byte Enable for RAM
-
 reg		[15:0]			RAM_DATA_W;
-
+`endif
 `endif
 
-
-`endif
-
-
-`ifdef FLASH_CHIP
-
-// Altera DE1 4MB FLASH
-`ifdef FLASH_CHIP_4M
-output	[21:0]	FL_ADDRESS;
-`endif
-
-// Altera DE2-70 8MB FLASH
-`ifdef FLASH_CHIP_8M
-output	[22:0]	FL_ADDRESS;
-`endif
-
-//input	[15:0]	FL_DATA;
-input	[7:0]	FL_DATA;
-output	FL_CE_N;
-output	FL_OE_N;
-output	FL_WE_N;
-output	FL_RESET_N;
-
-`ifdef DE0
-output		FL_BYTE_N;
-input		FL_RY;
-output		FL_WP_N;
-//output	FL_DQ15;
-`endif
-
-`ifdef DE1
-//output	FL_BYTE_N;
-//input		FL_RY;
-//output	FL_WP_N;
-//output	FL_DQ15;
-`endif
-
-`ifdef DE2
-//output	FL_BYTE_N;
-//input		FL_RY;
-//output	FL_WP_N;
-//output	FL_DQ15;
-`endif
-
-`ifdef DE2_70
-output		FL_BYTE_N;
-input		FL_RY;
-output		FL_WP_N;
-//output	FL_DQ15;
-`endif
-
-`ifdef DE2_115
-//output	FL_BYTE_N;
-input		FL_RY;
-output		FL_WP_N;
-//output	FL_DQ15;
-`endif
-
-`endif
-
-
-
-`ifdef VGA_RESISTOR
-// de0 de1
-`ifdef VGA_BIT12
-output	wire	[3:0]	VGA_RED;
-output	wire	[3:0]	VGA_GREEN;
-output	wire	[3:0]	VGA_BLUE;
-`endif
-
-output	wire			VGA_HS;
-output	wire			VGA_VS;
-`endif
-
-
-`ifdef VGA_ADV7123
-// de2
-`ifdef VGA_BIT30
-output	wire	[9:0]	VGA_DAC_RED;
-output	wire	[9:0]	VGA_DAC_GREEN;
-output	wire	[9:0]	VGA_DAC_BLUE;
-`endif
-
-`ifdef VGA_BIT24
-output	wire	[7:0]	VGA_DAC_RED;
-output	wire	[7:0]	VGA_DAC_GREEN;
-output	wire	[7:0]	VGA_DAC_BLUE;
-`endif
-
-output	reg				VGA_HS;
-output	reg				VGA_VS;
-output	wire			VGA_DAC_BLANK_N;
-output	wire			VGA_DAC_SYNC_N;
-output	wire			VGA_DAC_CLOCK;
-`endif
-
-
-// PS/2
-input 			PS2_KBCLK;
-input			PS2_KBDAT;
-
-// LEDs
-output	wire	[9:0]	LED;
-
-`ifdef GPIO_PIN
-output	wire	[7:0]	LEDG;
-`endif
-
-// Extra Buttons and Switches
-
-//input	[3:0]		SWITCH;
-input	[9:0]		SWITCH;
-
-
-`ifdef	DE1
-//input	[9:0]		SWITCH;
-`endif
-
-`ifdef	DE2
-//input	[17:0]		SWITCH;
-`endif
-
-
-`ifdef AUDIO_WM8731
-
-////////////////////	Audio CODEC		////////////////////////////
-// ADC
-inout			AUD_ADCLRCK;			//	Audio CODEC ADC LR Clock
-input			AUD_ADCDAT;				//	Audio CODEC ADC Data
-
-// DAC
-inout			AUD_DACLRCK;			//	Audio CODEC DAC LR Clock
-output	wire	AUD_DACDAT;				//	Audio CODEC DAC Data
-
-inout			AUD_BCLK;				//	Audio CODEC Bit-Stream Clock
-output	wire	AUD_XCK;				//	Audio CODEC Chip Clock
-
-////////////////////////	I2C		////////////////////////////////
-inout			I2C_SDAT;				//	I2C Data
-output			I2C_SCLK;				//	I2C Clock
-
-`endif
-
-
-`ifdef UART_CHIP
-input		UART_RXD;
-output		UART_TXD;
-`endif
-
-`ifdef UART_CHIP_EXT
-output		UART_CTS = 1'bz;
-input		UART_RTS;
-`endif
-
-// DE1
-
-`ifdef	DE1
-////////////////////////	7-SEG Dispaly	////////////////////////
-output	[6:0]	HEX0_D;					//	Seven Segment Digit 0
-output	[6:0]	HEX1_D;					//	Seven Segment Digit 1
-output	[6:0]	HEX2_D;					//	Seven Segment Digit 2
-output	[6:0]	HEX3_D;					//	Seven Segment Digit 3
-`endif
-
-// DE2
-
-// DE系列开发板
-//  0
-// 5 1
-//  6
-// 4 2
-//  3
-
-`ifdef	DE2
-////////////////////////	7-SEG Dispaly	////////////////////////
-output	[6:0]	HEX0_D;					//	Seven Segment Digit 0
-output	[6:0]	HEX1_D;					//	Seven Segment Digit 1
-output	[6:0]	HEX2_D;					//	Seven Segment Digit 2
-output	[6:0]	HEX3_D;					//	Seven Segment Digit 3
-output	[6:0]	HEX4_D;					//	Seven Segment Digit 4
-output	[6:0]	HEX5_D;					//	Seven Segment Digit 5
-output	[6:0]	HEX6_D;					//	Seven Segment Digit 6
-output	[6:0]	HEX7_D;					//	Seven Segment Digit 7
-`endif
-
-
-// DE1 DE2
-input	[3:0]		BUTTON_N;
 wire	[3:0]		BUTTON;
 
 `ifdef SKIP_BTN
@@ -462,14 +296,6 @@ assign	BUTTON		=	4'b0000;
 `else
 assign BUTTON		=	~BUTTON_N;
 `endif
-
-
-`ifdef GPIO_PIN
-////////////////////////	GPIO	////////////////////////////////
-//output	[35:0]	GPIO_0;		//	GPIO Connection 0
-//output	[35:0]	GPIO_1;		//	GPIO Connection 1
-`endif
-
 
 /*
 reg					CLK25MHZ;
@@ -479,11 +305,15 @@ always @(posedge CLK50MHZ)
 
 // 10MHz 的频率用于模块计数， 包括产生 50HZ 的中断信号的时钟，uart 模块的时钟，模拟磁带模块的时钟
 // 选择 10MHz 是因为 Cyclone II 的DLL 分频最多能到 5。最初打算用 1MHz。
+
+// The 10MHz frequency is used for the module count, including the clock that generates the 50HZ interrupt signal,
+// the uart module's clock, and the analog tape module's clock.
+// The 10MHz is chosen because the Cyclone II DLL can be divided up to 5. Originally intended to use 1MHz.
+
 wire				CLK10MHZ;
 CLK10MHZ_PLL CLK10MHZ_PLL_INST(
 	CLK50MHZ,
 	CLK10MHZ);
-
 
 // DLY_CLK 主要用于延时使用
 reg		[5:0]		DLY_CLK_CNT;
@@ -503,15 +333,10 @@ begin
 	DLY_CLK_CNT		<=	DLY_CLK_CNT + 1;		//	10/64 = 0.15625 MHz
 end
 
-
-
 // CLOCK & BUS
-(*keep*)wire				BASE_CLK = CLK50MHZ;
+(*keep*)wire			BASE_CLK = CLK50MHZ;
 
 reg		[3:0]		CLK_CNT;
-
-
-
 
 // Processor
 (*keep*)reg				CPU_CLK;
@@ -640,14 +465,12 @@ Q0 蜂鸣器A端电平
 
 reg		[7:0]		LATCHED_IO_DATA_WR;
 //reg	[7:0]		LATCHED_IO_DATA_RD;
-
 reg		[7:0]		LATCHED_BANK_0000;
 reg		[7:0]		LATCHED_BANK_4000;
 reg		[7:0]		LATCHED_BANK_C000;
 
 // 用于大于 4M 的 FLASH 区间切换
 reg					LATCHED_FLASH_BANK_SW;
-
 reg					LATCHED_DOSROM_EN;
 
 `ifdef SHRG
@@ -666,10 +489,8 @@ reg		[7:0]		LATCHED_RAM_DATA_FDC;
 wire	[7:0]		VGA_OUT_RED;
 wire	[7:0]		VGA_OUT_GREEN;
 wire	[7:0]		VGA_OUT_BLUE;
-
 wire				VGA_OUT_HS;
 wire				VGA_OUT_VS;
-
 wire				VGA_OUT_BLANK;
 
 `ifdef CLOCK_50MHZ
@@ -702,12 +523,12 @@ reg		[7:0]		LATCHED_KEY_DATA;
 (*keep*)wire			CASS_IN_R;
 
 // floppy
-(*keep*)wire					FDC_RAM_R;
-(*keep*)wire					FDC_RAM_W;
-(*keep*)wire		[17:0]		FDC_RAM_ADDR_R;
-(*keep*)wire		[17:0]		FDC_RAM_ADDR_W;
-reg			[7:0]		LAST_WRITE_DATA;
-(*keep*)wire		[7:0]		FDC_RAM_DATA_W;
+(*keep*)wire				FDC_RAM_R;
+(*keep*)wire				FDC_RAM_W;
+(*keep*)wire	[17:0]		FDC_RAM_ADDR_R;
+(*keep*)wire	[17:0]		FDC_RAM_ADDR_W;
+reg			[7:0]			LAST_WRITE_DATA;
+(*keep*)wire	[7:0]		FDC_RAM_DATA_W;
 
 (*keep*)wire	[7:0]		FLOPPY_RD_DATA;
 (*keep*)wire	[7:0]		FLOPPY_DATA;
@@ -721,9 +542,7 @@ wire		[7:0]	UART_BUF_DAT;
 wire				SYS_RESET_N;
 (*keep*)wire		RESET_N;
 wire				RESET_AHEAD_N;
-
 wire				RESET_KEY_N;
-
 wire				TURBO_SPEED		=	SWITCH[0];
 
 `ifdef GPIO_PIN
@@ -756,8 +575,6 @@ RESET_DE RESET_DE(
 	.RESET_AHEAD_N(RESET_AHEAD_N)	// 提前恢复，可以接 FL_RESET_N
 );
 
-
-
 `ifdef SIMULATE
 initial
 	begin
@@ -766,12 +583,9 @@ initial
 `endif
 
 `ifdef CLOCK_50MHZ
-
 always @(negedge CLK50MHZ)
-	VGA_CLK <= !VGA_CLK;
-
+	VGA_CLK <= !VGA_CLK;	// 25MHz
 `endif
-
 
 `ifdef CLOCK_27MHZ
 
@@ -783,12 +597,24 @@ VGA_Audio_PLL  VGA_AUDIO_PLL(.inclk0(CLK27MHZ),.c0(VGA_CLK),.c1(AUD_CTRL_CLK));
 // 频率 50HZ
 // 回扫周期暂定为：2线 x 800点 x 10MHZ / 25MHZ
 
+// frequency 50HZ
+// The retrace period is tentatively set to: 2 lines x 800 points x 10MHZ / 25MHZ
+
 // ~FS 垂直同步信号，送往IC1、IC2称IC4。6847对CPU的唯一直接影响，便是它的~FS输出被作为Z80A的~INT控制信号；
 // 每一场扫描结束，6847的~FS信号变低，便向Z80A发出中断请求。在PAL制中，场频为50Hz，每秒就有50次中断请求，以便系统程序利用场消隐期运行监控程序，访问显示RAM。
 
+// ~FS vertical sync signal, sent to IC1, IC2 called IC4. 
+// The only direct impact of 6847 on the CPU is that its ~FS output is used as the ~INT control signal of Z80A;
+// At the end of each scan, the ~FS signal of 6847 goes low and an interrupt request is issued to the Z80A. 
+// In the PAL system, the field rate is 50 Hz, and there are 50 interrupt requests per second, so that the system 
+// program can use the field blanking period to run the monitor program and access the display RAM.
+
 // 在加速模式中，要考虑对该计数器的影响
+// In acceleration mode, consider the impact on this counter (?)
 
 // 系统中断：简化处理是直接接到 VGA 的垂直回扫信号，频率60HZ。带来的问题是软件计时器会产生偏差。
+// System interrupt: Simplified processing is a vertical retrace signal directly connected to the VGA, 
+// frequency 60HZ. The problem is that the software timer will be biased.
 
 reg 		[17:0]	INT_CNT;
 
@@ -827,8 +653,12 @@ always @ (negedge CLK10MHZ)
 // 写 0 CPU 写信号和地址 1 锁存写和地址 2 完成写操作
 // 读 0 CPU 读信号和地址 1 锁存读和地址 2 完读写操作，开始输出数据
 
-// 读取需要中间间隔一个时钟
+// Synchronous memory operation
+// Write 0 CPU write signal and address 1 Latch write and address 2 Complete write operation
+// Read 0 CPU read signal and address 1 Latch read and address 2 End read and write operations, start outputting data
 
+// 读取需要中间间隔一个时钟
+// Reading requires an interval between the clocks
 
 `ifdef SIMULATE
 initial
@@ -837,47 +667,47 @@ initial
 	end
 `endif
 
+// BASE_CLK = 50MHz, period = 20ns
+
+// CLK_CNT has :
+// Normal speed = 14 states, 0=>13 == 50/14 = 3.571428571428571 MHz, period = 280ns
+// Turbo speed  =  4 states, 0=>3  == 50/4  = 12.5 MHz, period = 80ns
+
 always @(posedge BASE_CLK or negedge RESET_N)
 	if(~RESET_N)
 	begin
 		CPU_CLK					<=	1'b0;
 
-		// 复位期间设置，避免拨动开关引起错误
+		// 复位期间设置，避免拨动开关引起错误  : Set during reset to avoid the error caused by the toggle switch
+		
 		//LATCHED_DOSROM_EN		<=	SWITCH[1];
 		LATCHED_DOSROM_EN		<=	1'b1;
 
 		LATCHED_BANK_0000		<=	{8'b0};
 		LATCHED_BANK_4000		<=	{8'b0};
-
 		//LATCHED_BANK_0000		<=	{5'b0,SWITCH[6:4]};
 		//LATCHED_BANK_4000		<=	{5'b0,SWITCH[9:7]};
 		LATCHED_BANK_C000		<=	8'b0;
-
 		LATCHED_FLASH_BANK_SW	<=	1'b0;
 
 `ifdef SHRG
 		LATCHED_IO_SHRG			<=	8'b00001000;
-		// 复位期间设置，避免拨动开关引起错误
+		// 复位期间设置，避免拨动开关引起错误 : Set during reset to avoid the error caused by the toggle switch
 		LATCHED_SHRG_EN			<=	SWITCH[1];
 `endif
 
-
 		LATCHED_KEY_DATA		<=	8'b0;
 		LATCHED_IO_DATA_WR		<=	8'b0;
-
-		LATCHED_IO_FDC		<=	8'hFF;
+		LATCHED_IO_FDC			<=	8'hFF;
 		LATCHED_RAM_DATA_FDC	<=	8'hFF;
-
-		LATCHED_IO_FDC_CT		<=	8'b0110_0000;
+		LATCHED_IO_FDC_CT		<=	8'b0110_0000;  // 60H ???
 
 `ifdef RAM_ON_SRAM_CHIP
 		RAM_CS_N				<=	1'b0;
 		RAM_OE_N				<=	1'b0;
 		RAM_BE0_N				<=	1'b1;
 		RAM_BE1_N				<=	1'b1;
-
 		RAM_WE_N				<=	1'b1;
-
 		RAM_ADDR				<=	18'b0;
 		RAM_DATA_W				<=	16'b0;
 `endif
@@ -894,69 +724,66 @@ always @(posedge BASE_CLK or negedge RESET_N)
 		4'd0:
 			begin
 				// 当前状态：RAM：UART 读写
+				// Current status: RAM: UART read and write
 				CPU_CLK				<=	1'b0;
-
 				RAM_RDY_UART		<=	1'b0;
 
 `ifdef RAM_ON_SRAM_CHIP
 				// 异步SRAM内存，锁存读写信号和地址，使能写信号
+				// Asynchronous SRAM memory, latching read and write signals and addresses, enabling write signals
 				RAM_CS_N			<=	1'b0;
 				RAM_OE_N			<=	1'b0;
 				RAM_BE0_N			<=	1'b0;
 				RAM_BE1_N			<=	1'b1;
-
 				if({CPU_MREQ,CPU_RD,CPU_WR,ADDRESS_RAM_CHIP}==4'b1011)
-				begin
 					RAM_WE_N		<=	1'b0;
-				end
 				else
-				begin
 					RAM_WE_N		<=	1'b1;
-				end
-
 				RAM_ADDR			<=	{2'b0, CPU_A};
 				RAM_DATA_W			<=	{8'b0, CPU_DO};
 `endif
-
-				CLK_CNT					<=	4'd1;
+				CLK_CNT				<=	4'd1;
 			end
 	
 		4'd1:
 			begin
 				// 当前状态：RAM：准备 CPU 需要的数据
 				// 同步内存，等待读写信号建立
+				// Current status: RAM: Prepare the data required by the CPU
+				// Synchronize memory, wait for read and write signals to be established
 				CPU_CLK				<=	1'b1;
 
 `ifdef RAM_ON_SRAM_CHIP
 				// 异步SRAM内存，等待读写信号建立
+				// Asynchronous SRAM memory, waiting for read and write signals to be established
 				RAM_CS_N			<=	1'b0;
 				RAM_OE_N			<=	1'b0;
 				RAM_BE0_N			<=	1'b1;
 				RAM_BE1_N			<=	1'b0;
-
 				RAM_WE_N			<=	~FDC_RAM_W;
-
-				RAM_ADDR			<=	RAM_ADDRESS_FD_W;
+				RAM_ADDR			<=	RAM_ADDRESS_FD_W;				// possible back-to-back write, but on alternate bytes
 				RAM_DATA_W			<=	{FDC_RAM_DATA_W[7:0], 8'b0};
 `endif
-
 				VRAM_WR_N			<=	1'b1;
-
 				CLK_CNT				<=	4'd2;
 			end
 
 		4'd2:
 			begin
 				// CPU_CLK : 拉高
+				// CPU_CLK : Pull high (?)
 
 				// 当前状态：*** CPU 操作 （CPU 锁存信号线数据）***
+				// Current status: *** CPU operation (CPU latch signal line data)***
+				
 				// 当前状态：*** CPU 信号线开始输出 ***
+				// Current status: *** CPU signal line starts output ***
 
 				// 软盘控制器数据写入RAM
+				// Floppy disk controller data is written to RAM
+				
 				CPU_CLK				<=	1'b0;
-
 //				RAM_RDY_FDC			<=	1'b0;	// 可以下个周期操作
-
 				LATCHED_KEY_DATA	<=	KEY_DATA;
 
 				if({CPU_MREQ,CPU_RD,CPU_WR,ADDRESS_IO}==4'b1011)
@@ -968,7 +795,6 @@ always @(posedge BASE_CLK or negedge RESET_N)
 						LATCHED_IO_SHRG		<=	CPU_DO;
 `endif
 
-
 `ifdef IO_BANK
 				if({CPU_IORQ,CPU_RD,CPU_WR,ADDRESS_IO_BANK}==4'b1011)
 					LATCHED_BANK_C000	<=	CPU_DO;
@@ -976,7 +802,6 @@ always @(posedge BASE_CLK or negedge RESET_N)
 
 `ifdef GPIO_PIN
 `endif
-
 
 // FDC
 				if({CPU_IORQ,CPU_RD,CPU_WR,ADDRESS_IO_FDC_CT}==4'b1011)
@@ -990,58 +815,50 @@ always @(posedge BASE_CLK or negedge RESET_N)
 
 `ifdef RAM_ON_SRAM_CHIP
 				// 异步SRAM内存，锁存读写信号和地址，使能写信号
+				// Asynchronous SRAM memory, latching read and write signals and addresses, enabling write signals
 				RAM_CS_N			<=	1'b0;
 				RAM_OE_N			<=	1'b0;
 				RAM_BE0_N			<=	1'b1;
 				RAM_BE1_N			<=	1'b0;
-
 				RAM_WE_N			<=	1'b1;
-
 				RAM_ADDR			<=	RAM_ADDRESS_FD_R;
 				RAM_DATA_W			<=	16'b0;
 `endif
-
 				if({CPU_MREQ,CPU_RD,CPU_WR,ADDRESS_VRAM}==4'b1011)
-				begin
-					VRAM_WR_N			<=	1'b0;
-				end
+					VRAM_WR_N		<=	1'b0;
 				else
-				begin
-					VRAM_WR_N			<=	1'b1;
-				end
-
+					VRAM_WR_N		<=	1'b1;
 				CLK_CNT				<=	4'd3;
 			end
 
 		4'd3:
 			begin
 				// CPU_CLK : 拉低
+				// CPU_CLK : pull low
+				// 完成读写操作，开始输出 : Read and write operations, start output
+				// 软盘控制器数据读取RAM : Floppy disk controller data read RAM
 
-				// 完成读写操作，开始输出
-
-				// 软盘控制器数据读取RAM
 				CPU_CLK				<=	1'b0;
+				RAM_RDY_UART		<=	1'b1;	// 可以下个周期操作  Can operate in the next cycle
 
-				RAM_RDY_UART		<=	1'b1;	// 可以下个周期操作
-
-				// 锁存读取的 FDC 磁盘数据
-				if(FDC_RAM_R)
+				if(FDC_RAM_R)					// 锁存读取的 FDC 磁盘数据 : Latch read FDC disk data
 					LATCHED_RAM_DATA_FDC	<=	RAM_DATA_OUT_FDC;
 
 `ifdef RAM_ON_SRAM_CHIP
 				// 进行异步内存读写操作
 				// 读取操作，下个周期可以读取
 				// 写入操作，下个周期完成
+				// Perform asynchronous memory read and write operations
+				// read operation, can be read in the next cycle
+				// Write operation, completed in the next cycle
 
 				//RAM_CS_N		<=	~UART_BUF_WAIT;
 				RAM_CS_N		<=	~UART_BUF_CS;
 				RAM_OE_N		<=	1'b0;
 				RAM_BE0_N		<=	RAM_BE0_N_UART;
 				RAM_BE1_N		<=	RAM_BE1_N_UART;
-
-				//RAM_WE_N		<=	~UART_BUF_WAIT;		// UART数据写入RAM
+				//RAM_WE_N		<=	~UART_BUF_WAIT;		// UART数据写入RAM  UART data is written to RAM
 				RAM_WE_N		<=	~UART_BUF_WR;		// UART数据写入RAM
-
 				RAM_ADDR		<=	RAM_ADDRESS_UART;
 				RAM_DATA_W		<=	{UART_BUF_DAT,8'b0};
 `endif
@@ -1049,31 +866,29 @@ always @(posedge BASE_CLK or negedge RESET_N)
 				VRAM_WR_N			<=	1'b1;
 
 				if(TURBO_SPEED)
-					CLK_CNT				<=	4'd0;
+					CLK_CNT				<=	4'd0;		// 12.5MHz
 				else
-					CLK_CNT				<=	4'd4;
+					CLK_CNT				<=	4'd4;		// 3.57MHz
 			end
 
 		4'd4:
 			begin
-				// 当前状态：RAM：UART 读写
+				// 当前状态：RAM：UART 读写 : Current status: RAM: UART read and write
 				CPU_CLK				<=	1'b0;
-
 				RAM_RDY_UART		<=	1'b0;
 
 `ifdef RAM_ON_SRAM_CHIP
 				// 异步SRAM内存，锁存读写信号和地址，使能写信号
+				// Asynchronous SRAM memory, latching read and write signals and addresses, enabling write signals
+				
 				RAM_CS_N			<=	1'b1;
 				RAM_OE_N			<=	1'b0;
 				RAM_BE0_N			<=	1'b1;
 				RAM_BE1_N			<=	1'b1;
-
 				RAM_WE_N			<=	1'b1;
-
 				RAM_ADDR			<=	18'b0;
 				RAM_DATA_W			<=	16'b0;
 `endif
-
 				CLK_CNT				<=	4'd5;
 			end
 
@@ -1081,8 +896,7 @@ always @(posedge BASE_CLK or negedge RESET_N)
 		4'd13:
 			begin
 				CPU_CLK				<=	1'b0;
-
-				CLK_CNT				<=	4'd0;
+				CLK_CNT				<=	4'd0;	// terminal count, return to state ZERO
 			end
 
 		default:
@@ -1090,10 +904,9 @@ always @(posedge BASE_CLK or negedge RESET_N)
 				CPU_CLK				<=	1'b0;
 
 `ifdef RAM_ON_SRAM_CHIP
-				// 异步SRAM内存，完成了写操作
+				// 异步SRAM内存，完成了写操作  Asynchronous SRAM memory, complete write operation
 				RAM_WE_N			<=	1'b1;
 `endif
-
 				CLK_CNT				<=	CLK_CNT + 1'b1;
 			end
 		endcase
@@ -1117,6 +930,7 @@ wire [7:0] InPort = GPIO_IN;
 wire [7:0] InPort = 8'b0;
 `endif
 
+//=============================================================
 
 // CPU
 
@@ -1134,7 +948,7 @@ assign CPU_BUSAK = ~CPU_BUSAK_N;
 assign CPU_RESET_N = ~CPU_RESET;
 assign CPU_WAIT_N = ~CPU_WAIT;
 assign CPU_INT_N = ~CPU_INT;	// 50HZ
-//assign CPU_INT_N = ~VGA_VS;	// 接 VGA 垂直回扫信号 60HZ
+//assign CPU_INT_N = ~VGA_VS;	// 接 VGA 垂直回扫信号 60HZ : Connect VGA vertical retrace signal 60HZ
 assign CPU_NMI_N = ~CPU_NMI;
 assign CPU_BUSRQ_N = ~CPU_BUSRQ;
 
@@ -1165,17 +979,13 @@ tv80s Z80CPU (
 	.di(CPU_IORQ_N ? CPU_DI : CPU_D_INPORT)
 );
 
-`endif
+`endif // TV80
 
 assign CPU_RESET = ~RESET_N;
-
 assign CPU_NMI = 1'b0;
-
-// LASER310 的 WAIT_N 始终是高电平。
-assign CPU_WAIT = 1'b0;
+assign CPU_WAIT = 1'b0;				// LASER310 的 WAIT_N 始终是高电平。: The WAIT_N input of LASER310 is always high.
 
 //assign CPU_WAIT = CPU_MREQ && (~CLKStage[2]);
-
 
 // 0000 -- 3FFF ROM 16KB
 // 4000 -- 5FFF DOS
@@ -1187,52 +997,46 @@ assign CPU_WAIT = 1'b0;
 // B800 -- BFFF RAM ext 2KB
 // C000 -- F7FF RAM ext 14KB
 
-assign ADDRESS_ROM				=	(CPU_A[15:14] == 2'b00)?1'b1:1'b0;
-assign ADDRESS_DOSROM			=	(CPU_A[15:13] == 3'b010)?LATCHED_DOSROM_EN:1'b0;
-assign ADDRESS_IO				=	(CPU_A[15:11] == 5'b01101)?1'b1:1'b0;
-assign ADDRESS_VRAM				=	(CPU_A[15:11] == 5'b01110)?1'b1:1'b0;
+assign ADDRESS_ROM			=	(CPU_A[15:14] == 2'b00)?1'b1:1'b0;
+assign ADDRESS_DOSROM		=	(CPU_A[15:13] == 3'b010)?LATCHED_DOSROM_EN:1'b0;	// LATCHED_DOSROM_EN switch allows DOS to be switched out
+assign ADDRESS_IO			=	(CPU_A[15:11] == 5'b01101)?1'b1:1'b0;				// 6800H - 6FFFH  
+assign ADDRESS_VRAM			=	(CPU_A[15:11] == 5'b01110)?1'b1:1'b0;				// 7000H - 77FFH
 
-assign ADDRESS_89AB				=	(CPU_A[15:14] == 2'b10)?1'b1:1'b0;
-assign ADDRESS_CDEF				=	(CPU_A[15:14] == 2'b11)?1'b1:1'b0;
+assign ADDRESS_89AB			=	(CPU_A[15:14] == 2'b10)?1'b1:1'b0;					// *not currently used*
+assign ADDRESS_CDEF			=	(CPU_A[15:14] == 2'b11)?1'b1:1'b0;					// top 16KB
 
 // 7800 -- 7FFF RAM 2KB
-assign ADDRESS_RAM_78			=	(CPU_A[15:11] == 5'b01111)?1'b1:1'b0;
+assign ADDRESS_RAM_78		=	(CPU_A[15:11] == 5'b01111)?1'b1:1'b0;
 
 // 7800 -- 7FFF RAM 2KB
 // 8000 -- B7FF RAM 14KB
 assign ADDRESS_RAM_16K		=	(CPU_A[15:12] == 4'h8)?1'b1:
 								(CPU_A[15:12] == 4'h9)?1'b1:
 								(CPU_A[15:12] == 4'hA)?1'b1:
-								(CPU_A[15:11] == 5'b01111)?1'b1:
-								(CPU_A[15:11] == 5'b10110)?1'b1:
+								(CPU_A[15:11] == 5'b01111)?1'b1:	// 7X
+								(CPU_A[15:11] == 5'b10110)?1'b1:	// BX
 								1'b0;
 
 // 7800 -- 7FFF RAM 2KB
 // 8000 -- FFFF RAM 32KB
-assign ADDRESS_RAM_64K		=	(CPU_A[15:11] == 5'b01111)?1'b1:(CPU_A[15]);
+assign ADDRESS_RAM_64K		=	(CPU_A[15:11] == 5'b01111)?1'b1:(CPU_A[15]);  // 7X or 8X-FX
 
+assign ADDRESS_IO_SHRG		=	(CPU_A[7:0] == 8'd32)?1'b1:1'b0;	// IO 20H
 
-assign ADDRESS_IO_SHRG		=	(CPU_A[7:0] == 8'd32)?1'b1:1'b0;
+// 64K RAM expansion cartridge vz300_review.pdf 中的端口号是 IO 7FH 127     : The port number in is IO 7FH 127 
+// 128K SIDEWAYS RAM SHRG2 HVVZUG23 (Mar-Apr 1989).PDF 中的端口号是 IO 112  : The port number in is IO 70H 112
 
-// 64K RAM expansion cartridge vz300_review.pdf 中的端口号是 IO 7FH 127
-// 128K SIDEWAYS RAM SHRG2 HVVZUG23 (Mar-Apr 1989).PDF 中的端口号是 IO 112
+assign ADDRESS_IO_BANK		=	(CPU_A[7:0] == 8'd127 || CPU_A[7:0] == 8'd112)?1'b1:1'b0;	// respond to either address
 
-assign ADDRESS_IO_BANK	=	(CPU_A[7:0] == 8'd127 || CPU_A[7:0] == 8'd112)?1'b1:1'b0;
+assign ADDRESS_IO_FDC		=	(CPU_A[7:2] == 6'b000100)?1'b1:1'b0;	// IO 10H-13H (any FDC address being accessed)
+assign ADDRESS_IO_FDC_CT	=	(CPU_A[7:0] == 8'h10)?1'b1:1'b0;		// IO 10H
+assign ADDRESS_IO_FDC_DATA	=	(CPU_A[7:0] == 8'h11)?1'b1:1'b0;		// IO 11H
+assign ADDRESS_IO_FDC_POLL	=	(CPU_A[7:0] == 8'h12)?1'b1:1'b0;		// IO 12H
+assign ADDRESS_IO_FDC_WP	=	(CPU_A[7:0] == 8'h13)?1'b1:1'b0;		// IO 13H
 
+assign ADDRESS_RAM_CHIP		=	ADDRESS_RAM_64K;
 
-assign ADDRESS_IO_FDC	=	(CPU_A[7:2] == 6'b000100)?1'b1:1'b0;
-
-assign ADDRESS_IO_FDC_CT	=	(CPU_A[7:0] == 8'h10)?1'b1:1'b0;
-assign ADDRESS_IO_FDC_DATA	=	(CPU_A[7:0] == 8'h11)?1'b1:1'b0;
-assign ADDRESS_IO_FDC_POLL	=	(CPU_A[7:0] == 8'h12)?1'b1:1'b0;
-assign ADDRESS_IO_FDC_WP	=	(CPU_A[7:0] == 8'h13)?1'b1:1'b0;
-
-
-assign	ADDRESS_RAM_CHIP	=	ADDRESS_RAM_64K;
-
-
-assign VRAM_WR			=	~VRAM_WR_N;
-
+assign VRAM_WR				=	~VRAM_WR_N;
 
 `ifdef	RAM_ON_SRAM_CHIP
 assign CPU_DI = 	ADDRESS_ROM				? SYS_ROM_DATA			:
@@ -1259,7 +1063,6 @@ assign RAM_BE0_N_UART	=	1'b1;
 assign RAM_BE0_N_FD		=	1'b1;
 //assign RAM_BE0_N_CPU	=	1'b1;
 
-
 //assign RAM_BE1_N_VID	=	1'b1;
 assign RAM_BE1_N_UART	=	1'b0;
 //assign RAM_BE1_N_FD		=	~FDC_RAM_W;
@@ -1271,37 +1074,35 @@ assign RAM_ADDRESS_UART	=		UART_BUF_A[17:0];
 assign RAM_ADDRESS_FD_R	=		FDC_RAM_ADDR_R;
 assign RAM_ADDRESS_FD_W	=		FDC_RAM_ADDR_W;
 
+//==================================================================
 
 `ifdef FLASH_CHIP
 
-// bank 1 bank255
+// bank 1 bank255  ?
 
-// Altera DE1 4MB FLASH
+// Altera DE1 4MB FLASH : output	[21:0]	FL_ADDRESS;
 `ifdef FLASH_CHIP_4M
-//output	[21:0]	FL_ADDRESS;
-assign	FL_ADDRESS[21:0]	=	(ADDRESS_CDEF)				?	{LATCHED_BANK_C000, CPU_A[13:0]}				:
-								(ADDRESS_DOSROM)			?	{5'b00001, LATCHED_BANK_4000[2:0], CPU_A[13:0]}	:
-																{5'b00000, LATCHED_BANK_0000[2:0], CPU_A[13:0]}	;
+assign	FL_ADDRESS[21:0]	=	(ADDRESS_CDEF)		?	{LATCHED_BANK_C000, CPU_A[13:0]}				:
+								(ADDRESS_DOSROM)	?	{5'b00001, LATCHED_BANK_4000[2:0], CPU_A[13:0]}	:
+														{5'b00000, LATCHED_BANK_0000[2:0], CPU_A[13:0]}	;
 `endif
 
-// Altera DE2-70 8MB FLASH
+// Altera DE2-70 8MB FLASH	: output	[22:0]	FL_ADDRESS;
 `ifdef FLASH_CHIP_8M
-//output	[22:0]	FL_ADDRESS;
-assign	FL_ADDRESS[21:0]	=	(ADDRESS_CDEF)				?	{LATCHED_BANK_C000, CPU_A[13:0]}				:
-								(ADDRESS_DOSROM)			?	{5'b00001, LATCHED_BANK_4000[2:0], CPU_A[13:0]}	:
-																{5'b00000, LATCHED_BANK_0000[2:0], CPU_A[13:0]}	;
-assign	FL_ADDRESS[22]		=	LATCHED_FLASH_BANK_SW;
+assign	FL_ADDRESS[21:0]	=	(ADDRESS_CDEF)		?	{LATCHED_BANK_C000, CPU_A[13:0]}				:
+								(ADDRESS_DOSROM)	?	{5'b00001, LATCHED_BANK_4000[2:0], CPU_A[13:0]}	:
+														{5'b00000, LATCHED_BANK_0000[2:0], CPU_A[13:0]}	;
+
+assign	FL_ADDRESS[22]		=	LATCHED_FLASH_BANK_SW;		// currently always set to ZERO
 `endif
 
-assign	FL_RESET_N	=	RESET_AHEAD_N;
-assign	FL_CE_N		=	1'b0;
-assign	FL_OE_N		=	1'b0;
-assign	FL_WE_N		=	1'b1;
-
+assign	FL_RESET_N		=	RESET_AHEAD_N;
+assign	FL_CE_N			=	1'b0;				// flash chip is *always* enabled for reading
+assign	FL_OE_N			=	1'b0;
+assign	FL_WE_N			=	1'b1;
 
 assign	SYS_ROM_DATA	=	FL_DATA;
 assign	DOS_ROM_DATA	=	FL_DATA;
-
 
 `ifdef DE1
 assign	FL_BYTE_N	=	1'b0;
@@ -1331,27 +1132,22 @@ assign	FL_WP_N		=	1'bz;
 assign	FL_WP_N		=	1'bz;
 `endif
 
-`endif
+`endif // FLASH_CHIP
 
+//==================================================================
 
 
 `ifdef	RAM_ON_SRAM_CHIP
 
-`ifdef SRAM_CHIP_256x16
-
-// Altera DE1 512K SRAM
-// Altera DE2 512K SRAM
-
-assign	RAM_ADDRESS				=	RAM_ADDR;
-
+`ifdef SRAM_CHIP_256x16							// Altera DE1/DE2 : 512K SRAM
+assign	RAM_ADDRESS			=	RAM_ADDR;
 `endif
 
-assign	RAM_DATA	=	RAM_WE_N	?	16'bZ	:	RAM_DATA_W;
-
+assign	RAM_DATA			=	RAM_WE_N ? 16'bZ : RAM_DATA_W;
 assign	RAM_DATA_OUT_64K	=	RAM_DATA[7:0];
 assign	RAM_DATA_OUT_FDC	=	RAM_DATA[15:8];
 
-`endif
+`endif // RAM_ON_SRAM_CHIP
 
 
 /*****************************************************************************
@@ -1360,9 +1156,7 @@ assign	RAM_DATA_OUT_FDC	=	RAM_DATA[15:8];
 // Request for every other line to be black
 // Looks more like the original video
 
-
 `ifdef VRAM_2K
-
 `ifdef FPGA_ALTERA
 
 vram_altera vram_2k(
@@ -1371,21 +1165,17 @@ vram_altera vram_2k(
 	.clock_a(BASE_CLK),
 	.clock_b(VDG_RD),
 	.data_a(CPU_DO),
-	.data_b(),
+	.data_b(),							// port B Read-Only
 	//.wren_a(CPU_MREQ & VRAM_WR),
 	.wren_a(VRAM_WR),
 	.wren_b(1'b0),
 	.q_a(VRAM_DATA_OUT),
 	.q_b(VDG_DATA)
 );
-
-`endif
-
-`endif
-
+`endif // FPGA_ALTERA
+`endif // VRAM_2K
 
 `ifdef VRAM_8K
-
 `ifdef FPGA_ALTERA
 
 vram_8k_altera vram_8k(
@@ -1394,7 +1184,7 @@ vram_8k_altera vram_8k(
 	.clock_a(BASE_CLK),
 	.clock_b(VDG_RD),
 	.data_a(CPU_DO),
-	.data_b(),
+	.data_b(),							// port B Read-Only
 	//.wren_a(CPU_MREQ & VRAM_WR),
 	.wren_a(VRAM_WR),
 	.wren_b(1'b0),
@@ -1402,9 +1192,8 @@ vram_8k_altera vram_8k(
 	.q_b(VDG_DATA)
 );
 
-`endif
-
-`endif
+`endif // FPGA_ALTERA
+`endif // VRAM_8K
 
 
 // Video timing and modes
@@ -1435,6 +1224,7 @@ MC6847_VGA MC6847_VGA(
 	.VGA_OUT_BLUE(VGA_OUT_BLUE)
 );
 
+//-------------------------------------------
 
 `ifdef VGA_RESISTOR
 
@@ -1447,7 +1237,9 @@ assign VGA_BLUE = VGA_OUT_BLUE[7:4];
 assign VGA_HS = VGA_OUT_HS;
 assign VGA_VS = VGA_OUT_VS;
 
-`endif
+`endif // VGA_RESISTOR
+
+//-------------------------------------------
 
 `ifdef VGA_ADV7123
 
@@ -1472,12 +1264,11 @@ always @(posedge VGA_CLK)
 		VGA_HS <= VGA_OUT_HS;
 		VGA_VS <= VGA_OUT_VS;
 	end
+`endif // VGA_ADV7123
 
-`endif
-
+//=================================================
 
 // keyboard
-
 `ifdef SIMULATE
 initial
 	begin
@@ -1485,35 +1276,33 @@ initial
 	end
 `endif
 
-
 always @ (posedge CLK50MHZ)
 begin
 	KB_CLK			<=	KB_CLK_CNT[4];
 	KB_CLK_CNT		<=	KB_CLK_CNT + 1;		//	50/32 = 1.5625 MHz
 end
 
-
-assign KEY_DATA[7] = 1'b1;	// 没有空置，具体用途没有理解
+assign KEY_DATA[7] = 1'b1;	// 没有空置，具体用途没有理解 : No vacancy, no specific use (?)
 //assign KEY_DATA[6] = CASS_IN;
 assign KEY_DATA[6] = ~CASS_IN;
 
-
 LASER_KEYBOARD	KEYBOARD_U
 (
-	KB_CLK,			// 1.5625 MHz
-	DLY_CLK,		// 0.15625 MHz
-	RESET_N,
+	.KB_CLK(KB_CLK),			// 1.5625 MHz
+	.DLY_CLK(DLY_CLK),			// 0.15625 MHz
+	.RESET_N(RESET_N),
+	
+	.PS2_KBCLK(PS2_KBCLK),
+	.PS2_KBDAT(PS2_KBDAT),
+	
+	.KEY_ADDR(CPU_A[7:0]),
+	.KEY_PRESSED(KEY_PRESSED),
+	.KEY_DATA(KEY_DATA[5:0]),
 
-	PS2_KBCLK,
-	PS2_KBDAT,
-
-	CPU_A[7:0],
-	KEY_PRESSED,
-	KEY_DATA[5:0],
-
-	RESET_KEY_N
+	.RESET_KEY_N(RESET_KEY_N)
 );
 
+//=================================================
 
 `ifdef AUDIO_WM8731
 
@@ -1535,9 +1324,7 @@ AUDIO_IF AUD_IF(
 	.iRST_N(RESET_N)
 );
 
-
 `ifdef DE1
-
 // AUDIO_WM8731
 
 I2C_AUD_Config AUD_I2C_U(
@@ -1557,6 +1344,8 @@ I2C_AUD_Config AUD_I2C_U(
 // AUDIO_WM8731
 // ADV7180
 // 有个老的DE2开发板需要设置 ADV7180，否则显示画面不稳定(产生CLK27MHZ信号)
+// There is an old DE2 development board that needs to set ADV7180, 
+// otherwise the display is unstable (generating CLK27MHZ signal)
 
 I2C_AV_Config AV_I2C_U(
 	//	Host Side
@@ -1572,9 +1361,7 @@ I2C_AV_Config AV_I2C_U(
 
 assign	AUD_XCK = AUD_CTRL_CLK;
 
-`endif
-
-
+`endif // AUDIO_WM8731
 
 assign	CASS_OUT		=	{LATCHED_IO_DATA_WR[2], 1'b0};
 
@@ -1582,19 +1369,18 @@ assign	CASS_OUT		=	{LATCHED_IO_DATA_WR[2], 1'b0};
 assign	CASS_IN			=	CASS_IN_L;
 `endif
 
-
+//=================================================
 
 `ifdef GPIO_PIN
 //assign	GPIO_0[35:0]	=	36'bz;		//	GPIO Connection 0
 //assign	GPIO_1[35:0]	=	36'bz;		//	GPIO Connection 1
 `endif
 
+//=================================================
 
 // floppy
 
 assign FLOPPY_WP_READ	= 1'b0;
-
-
 
 wire	[7:0]		FDC_DATA;
 wire				FDC_POLL;
@@ -1621,50 +1407,54 @@ assign	FDC_IO_DATA	=	(CPU_IORQ&ADDRESS_IO_FDC_DATA);
 assign	FDC_IO_CT	=	(CPU_IORQ&ADDRESS_IO_FDC_CT);
 
 FDC_IF FDC_U (
-	CPU_CLK,
-	RESET_N,
-	SWITCH[3:2],
-	SWITCH[9:6],
-
-	FDC_RAM_R,
-	FDC_RAM_W,
-	FDC_RAM_ADDR_R,
-	FDC_RAM_ADDR_W,
-	LATCHED_RAM_DATA_FDC,
-	FDC_RAM_DATA_W,
-
-	FDC_IO,
-	FDC_IO_POLL,
-	FDC_IO_DATA,
-	FDC_IO_CT,
-
-	FDC_SIG,
-	FDC_SIG_CLK,
-
-	LATCHED_IO_FDC_CT,
-	FDC_DATA,
-	FDC_POLL,
-	FDC_WP,
-
-	SECTOR_BYTE,
-	TRACK1_NO,
-	TRACK2_NO,
-	DRIVE1,
-	DRIVE2,
-	MOTOR
+	.FDC_CLK(CPU_CLK),
+	.RESET_N(RESET_N),
+	.SW(SWITCH[3:2]),
+	.DBG( SWITCH[9:6]),
+	    
+	.FDC_RAM_R(FDC_RAM_R),
+	.FDC_RAM_W(FDC_RAM_W),
+	.FDC_RAM_ADDR_R(FDC_RAM_ADDR_R),
+	.FDC_RAM_ADDR_W(FDC_RAM_ADDR_W),
+	.FDC_RAM_DATA_R(LATCHED_RAM_DATA_FDC),
+	.FDC_RAM_DATA_W(FDC_RAM_DATA_W),
+	             
+	.FDC_IO(FDC_IO),
+	.FDC_IO_POLL(FDC_IO_POLL),
+	.FDC_IO_DATA(FDC_IO_DATA),
+	.FDC_IO_CT(FDC_IO_CT),
+	      
+	.FDC_SIG(FDC_SIG),
+	.FDC_SIG_CLK(FDC_SIG_CLK),
+	                   
+	.FDC_CT(LATCHED_IO_FDC_CT),
+	.FDC_DATA(FDC_DATA),
+	.FDC_POLL(FDC_POLL),
+	.FDC_WP(FDC_WP),
+	                
+	.FLOPPY_SECTOR_BYTE(SECTOR_BYTE),
+	.TRACK1_NO(TRACK1_NO),
+	.TRACK2_NO(TRACK2_NO),
+	.DRIVE1(DRIVE1),
+	.DRIVE2(DRIVE2),
+	.MOTOR(MOTOR)
 );
 
+//=================================================
+
+// 7 segment displays 
 
 `ifdef	DE1
 wire	[15:0]	SEG7_DIG	=	{TRACK2_NO, TRACK1_NO};
 SEG7_LUT_4 SEG7_U(HEX0_D,HEX1_D,HEX2_D,HEX3_D, SEG7_DIG);
 `endif
 
-
 `ifdef	DE2
 wire	[31:0]	SEG7_DIG	=	{16'b0, TRACK2_NO, TRACK1_NO};
 SEG7_LUT_8 SEG7_U(HEX0_D,HEX1_D,HEX2_D,HEX3_D,HEX4_D,HEX5_D,HEX6_D,HEX7_D, SEG7_DIG);
 `endif
+
+//=================================================
 
 // uart
 
@@ -1684,19 +1474,19 @@ UART_IF FD_BUF_UART_IF(
 
 	//	Control Signals
 
-    /*
-     * UART: 115200 bps, 8N1
-     */
+    /* UART: 115200 bps, 8N1 */
     .UART_RXD(UART_RXD),
     .UART_TXD(UART_TXD),
 
-	// 串口调试
+	// 串口调试 : Serial port debugging
 	.DBG(UART_DBG),
 
 	// Clock: 10MHz 25MHz 50MHz
-	.CLK(BASE_CLK),		// 需要与主状态机在同一时钟域
+	.CLK(BASE_CLK),		// 需要与主状态机在同一时钟域 : Need to be in the same clock domain as the main state machine
 	.RST_N(RESET_N)
 );
+
+//=================================================
 
 // other
 
@@ -1710,6 +1500,10 @@ reg trap_clk;
 always @(posedge CPU_CLK)
 	begin
 		// 数据读取点
+		// Data reading point
+		
+		// These values are all addresses in the DOS ROM (version??). 
+		// Code here is looking to see if the CPU executes to certain points signifying data has been read/written OK
 
 /*
 		// 读取之前
@@ -1755,10 +1549,10 @@ always @(posedge CPU_CLK)
 */
 
 		trap_clk <=	(
-			LATCHED_CPU_A==16'h54CB
-			|| LATCHED_CPU_A==16'h56DF || LATCHED_CPU_A==16'h57FB
+			LATCHED_CPU_A==16'h54CB	|| LATCHED_CPU_A==16'h56DF || LATCHED_CPU_A==16'h57FB
 
 			// 读取数据 读取失败 读取成功
+			// Read data, read failed, read successfully
 			|| LATCHED_CPU_A==16'h5E7D || LATCHED_CPU_A==16'h5E9F || LATCHED_CPU_A==16'h5EA2
 			);
 
@@ -1781,9 +1575,11 @@ always @(posedge CPU_CLK)
 	end
 
 // 读取完128个数据准备校验
-(*keep*)wire trap =	(LATCHED_CPU_A==16'h5E88);
+// Read 128 data ready for verification
 
-//(*keep*)wire trap =	(LATCHED_CPU_A==16'h4241);	// ERROR 寄存器a存放错误代码
+(*keep*)wire trap =	(LATCHED_CPU_A==16'h5E88);		// All data read, prior to CRC calculations
+
+//(*keep*)wire trap =	(LATCHED_CPU_A==16'h4241);	// ERROR 寄存器a存放错误代码 : ERROR register 'A' stores the error code
 
 
 assign LED = {KEY_PRESSED, MOTOR, DRIVE1, trap, trap_clk, FDC_SIG, FDC_SIG_CLK, UART_DBG, LATCHED_SHRG_EN, TURBO_SPEED};

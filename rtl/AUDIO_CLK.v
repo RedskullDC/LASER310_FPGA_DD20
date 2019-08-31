@@ -1,25 +1,17 @@
 module AUDIO_CLOCK (
-					//	Audio Side
-					BCLK,
-					BCLK_CONT,
-					LRCK,
-					//	Control Signals
-				    iCLK_18_4,
-					iRST_N
-					);				
+	//	Audio Side
+	output	reg			BCLK,
+	output	reg	[4:0]	BCLK_CONT,
+	output	reg			LRCK,
+	//	Control Signals
+	input				iCLK_18_4,
+	input				iRST_N
+);				
 
 parameter	REF_CLK			=	18432000;	//	18.432	MHz
 parameter	SAMPLE_RATE		=	48000;		//	48		KHz
 parameter	DATA_WIDTH		=	16;			//	16		Bits
 parameter	CHANNEL_NUM		=	2;			//	Dual Channel
-
-//	Audio Side
-output	reg				LRCK;
-output	reg				BCLK;
-output	reg		[4:0]	BCLK_CONT;
-
-input					iCLK_18_4;
-input					iRST_N;
 
 //	Internal Registers and Wires
 reg	[3:0]	BCLK_DIV;
